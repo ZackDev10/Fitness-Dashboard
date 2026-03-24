@@ -1,0 +1,11 @@
+# Streamlit Secrets (CRITICAL: Never push your Supabase keys)
+.streamlit/secrets.toml
+
+# Python Cache
+__pycache__/
+*.py[cod]
+*$py.class
+
+# OS generated files
+.DS_Store
+Thumbs.db

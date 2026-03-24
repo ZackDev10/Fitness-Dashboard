@@ -1,0 +1,36 @@
+# ── requirements.txt ───────────────────────────────────────────────────────────
+# 3 Months Discipline Tracker — Streamlit + Supabase
+#
+# KEY COMPATIBILITY NOTES
+# ────────────────────────
+# 1. supabase 2.x ships its own httpx pin via gotrue / postgrest-py.
+#    Streamlit 1.35+ also pulls in httpx. Pin httpx to a range both agree on.
+#
+# 2. supabase 2.x uses the `realtime-py` client which requires websockets>=11.
+#    Streamlit's tornado-based server is fine with this — just don't mix with
+#    the older `websocket-client` package (different library, different namespace).
+#
+# 3. Never pin `websockets` AND `websocket-client` together; they conflict.
+#    supabase 2.x only needs `websockets` (which realtime-py lists as a dep).
+# ────────────────────────────────────────────────────────────────────────────────
+
+# Core app
+streamlit>=1.35.0,<2.0.0
+
+# Data
+pandas>=2.1.0,<3.0.0
+numpy>=1.26.0,<2.0.0
+
+# Supabase (2.x is the current stable major; includes postgrest-py, gotrue, storage3, realtime-py)
+supabase>=2.5.0,<3.0.0
+
+# httpx — pinned to satisfy BOTH Streamlit's starlette deps AND supabase's gotrue/postgrest
+# supabase 2.5+ requires httpx>=0.24, Streamlit 1.35 works with >=0.24
+httpx>=0.27.0,<0.28.0
+
+# websockets — required by realtime-py (supabase real-time). Do NOT add websocket-client.
+websockets>=12.0,<14.0
+
+# Extras (optional but good for date handling)
+python-dateutil>=2.9.0
+ 
