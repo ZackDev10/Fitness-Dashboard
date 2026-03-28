@@ -1,22 +1,37 @@
-"""
-DASHBOARD 3 MONTHS TRACKER: 3 MONTHS OF DISCIPLINE
-====================================================
-A personal fitness and nutrition tracking dashboard built with Streamlit + Supabase.
-
-Setup:
-  1. Create `.streamlit/secrets.toml` with:
-       [supabase]
-       url = "https://YOUR_PROJECT.supabase.co"
-       key = "YOUR_ANON_OR_SERVICE_ROLE_KEY"
-
-  2. Install dependencies from requirements.txt
-  3. Run: streamlit run app.py
-"""
-
 import streamlit as st
 import pandas as pd
 from datetime import date, timedelta
 import calendar
+
+# --- ADD THIS BLOCK TO FIX MOBILE LAYOUT ---
+st.markdown("""
+    <style>
+    /* Prevent columns from stacking on mobile */
+    [data-testid="column"] {
+        min-width: 45px !important;
+        flex: 1 1 auto !important;
+    }
+
+    /* Force horizontal alignment and add a scrollbar */
+    [data-testid="stHorizontalBlock"] {
+        display: flex !important;
+        flex-direction: row !important;
+        flex-wrap: nowrap !important;
+        overflow-x: auto !important;
+        padding-bottom: 15px !important;
+    }
+
+    /* Styling the scrollbar for Zack Space OS Dark Mode */
+    [data-testid="stHorizontalBlock"]::-webkit-scrollbar {
+        height: 5px;
+    }
+    [data-testid="stHorizontalBlock"]::-webkit-scrollbar-thumb {
+        background: #31333F;
+        border-radius: 10px;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+# --------------------------------------------
 
 # ── Embedded local images (base64-encoded from user uploads) ─────────────────
 _B64 = {
