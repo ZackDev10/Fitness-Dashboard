@@ -6,27 +6,35 @@ import calendar
 # --- ADD THIS BLOCK TO FIX MOBILE LAYOUT ---
 st.markdown("""
     <style>
-    /* 1. Target the main horizontal container */
+    /* 1. Force the parent container to NEVER wrap */
     div[data-testid="stHorizontalBlock"] {
+        display: flex !important;
         flex-direction: row !important;
         flex-wrap: nowrap !important;
         overflow-x: auto !important;
-        display: flex !important;
+        width: 100% !important;
     }
 
-    /* 2. Prevent the columns from collapsing to 100% width on mobile */
+    /* 2. Force every column to stay exactly 45px wide */
     div[data-testid="column"] {
-        flex: 0 0 50px !important; /* Forces each column to stay 50px wide */
-        min-width: 50px !important;
-        max-width: 50px !important;
+        flex: 0 0 45px !important;
+        min-width: 45px !important;
+        max-width: 45px !important;
+        padding: 0 !important;
+        margin: 0 !important;
     }
 
-    /* 3. Style the scrollbar so it's visible in Dark Mode */
+    /* 3. Ensure the checkbox and label don't stretch */
+    div[data-testid="stCheckbox"] {
+        width: 45px !important;
+    }
+
+    /* 4. Make the scrollbar visible so you can see it's a slider */
     div[data-testid="stHorizontalBlock"]::-webkit-scrollbar {
-        height: 6px;
+        height: 8px !important;
     }
     div[data-testid="stHorizontalBlock"]::-webkit-scrollbar-thumb {
-        background-color: #4b4b4b;
+        background: #FF4B4B !important; /* Using a visible red to test if it's working */
         border-radius: 10px;
     }
     </style>
