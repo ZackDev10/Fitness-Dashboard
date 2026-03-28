@@ -6,27 +6,27 @@ import calendar
 # --- ADD THIS BLOCK TO FIX MOBILE LAYOUT ---
 st.markdown("""
     <style>
-    /* Prevent columns from stacking on mobile */
-    [data-testid="column"] {
-        min-width: 45px !important;
-        flex: 1 1 auto !important;
-    }
-
-    /* Force horizontal alignment and add a scrollbar */
-    [data-testid="stHorizontalBlock"] {
-        display: flex !important;
+    /* 1. Target the main horizontal container */
+    div[data-testid="stHorizontalBlock"] {
         flex-direction: row !important;
         flex-wrap: nowrap !important;
         overflow-x: auto !important;
-        padding-bottom: 15px !important;
+        display: flex !important;
     }
 
-    /* Styling the scrollbar for Zack Space OS Dark Mode */
-    [data-testid="stHorizontalBlock"]::-webkit-scrollbar {
-        height: 5px;
+    /* 2. Prevent the columns from collapsing to 100% width on mobile */
+    div[data-testid="column"] {
+        flex: 0 0 50px !important; /* Forces each column to stay 50px wide */
+        min-width: 50px !important;
+        max-width: 50px !important;
     }
-    [data-testid="stHorizontalBlock"]::-webkit-scrollbar-thumb {
-        background: #31333F;
+
+    /* 3. Style the scrollbar so it's visible in Dark Mode */
+    div[data-testid="stHorizontalBlock"]::-webkit-scrollbar {
+        height: 6px;
+    }
+    div[data-testid="stHorizontalBlock"]::-webkit-scrollbar-thumb {
+        background-color: #4b4b4b;
         border-radius: 10px;
     }
     </style>
