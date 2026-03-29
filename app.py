@@ -3,43 +3,6 @@ import pandas as pd
 from datetime import date, timedelta
 import calendar
 
-# --- ADD THIS BLOCK TO FIX MOBILE LAYOUT ---
-st.markdown("""
-    <style>
-    /* 1. Force the parent container to NEVER wrap */
-    div[data-testid="stHorizontalBlock"] {
-        display: flex !important;
-        flex-direction: row !important;
-        flex-wrap: nowrap !important;
-        overflow-x: auto !important;
-        width: 100% !important;
-    }
-
-    /* 2. Force every column to stay exactly 45px wide */
-    div[data-testid="column"] {
-        flex: 0 0 45px !important;
-        min-width: 45px !important;
-        max-width: 45px !important;
-        padding: 0 !important;
-        margin: 0 !important;
-    }
-
-    /* 3. Ensure the checkbox and label don't stretch */
-    div[data-testid="stCheckbox"] {
-        width: 45px !important;
-    }
-
-    /* 4. Make the scrollbar visible so you can see it's a slider */
-    div[data-testid="stHorizontalBlock"]::-webkit-scrollbar {
-        height: 8px !important;
-    }
-    div[data-testid="stHorizontalBlock"]::-webkit-scrollbar-thumb {
-        background: #FF4B4B !important; /* Using a visible red to test if it's working */
-        border-radius: 10px;
-    }
-    </style>
-    """, unsafe_allow_html=True)
-# --------------------------------------------
 
 # ── Embedded local images (base64-encoded from user uploads) ─────────────────
 _B64 = {
@@ -354,7 +317,99 @@ tab1, tab2, tab3, tab4 = st.tabs(
 # TAB 1 — DAILY LOG
 # ─────────────────────────────────────────────────────────────────────────────
 
+import streamlit.components.v1 as components
+import calendar as _calendar
+import json
+
+def _build_day_strip(habit_key: str, days_in_month: int, saved_states: dict) -> str:
+    """
+    Return a self-contained HTML string that renders a horizontally-scrolling
+    row of toggle buttons (one per day of the month).
+
+    saved_states: dict[int → bool]  e.g. {1: True, 3: False, ...}
+    """
+    initial = {str(d): bool(saved_states.get(d, False)) for d in range(1, days_in_month + 1)}
+    initial_json = json.dumps(initial)
+
+    buttons_html = ""
+    for d in range(1, days_in_month + 1):
+        active = initial.get(str(d), False)
+        bg     = "#c8ff00" if active else "#1a1a1a"
+        color  = "#000"    if active else "#888"
+        border = "#c8ff00" if active else "#333"
+        buttons_html += (
+            f'<button id="d{habit_key}{d}" onclick="toggle(\'{habit_key}\',{d})" '
+            f'style="min-width:38px;height:44px;border-radius:8px;border:2px solid {border};'
+            f'background:{bg};color:{color};font-weight:700;font-size:0.72rem;cursor:pointer;'
+            f'flex-shrink:0;transition:background 0.12s,border-color 0.12s;">{d}</button>\n'
+        )
+
+    html = f"""
+<style>
+  #wrap-{habit_key} {{
+    display: flex;
+    gap: 5px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    padding: 6px 2px;
+    scrollbar-width: thin;
+    scrollbar-color: #333 transparent;
+  }}
+  #wrap-{habit_key}::-webkit-scrollbar {{ height: 4px; }}
+  #wrap-{habit_key}::-webkit-scrollbar-thumb {{ background: #333; border-radius: 2px; }}
+</style>
+<div id="wrap-{habit_key}">{buttons_html}</div>
+<div id="info-{habit_key}" style="font-size:0.68rem;color:#666;padding:2px 2px 0;font-family:sans-serif;">
+  Swipe ↔ to scroll · tap to toggle
+</div>
+<script>
+(function() {{
+  const state = {initial_json};
+  function toggle(key, day) {{
+    state[String(day)] = !state[String(day)];
+    const btn = document.getElementById('d' + key + day);
+    if (state[String(day)]) {{
+      btn.style.background = '#c8ff00';
+      btn.style.color = '#000';
+      btn.style.borderColor = '#c8ff00';
+    }} else {{
+      btn.style.background = '#1a1a1a';
+      btn.style.color = '#888';
+      btn.style.borderColor = '#333';
+    }}
+    const done = Object.values(state).filter(Boolean).length;
+    document.getElementById('info-{habit_key}').innerText =
+      done + ' day' + (done !== 1 ? 's' : '') + ' logged — swipe ↔ to scroll · tap to toggle';
+    window.parent.postMessage({{
+      type: 'streamlit:setComponentValue',
+      value: state
+    }}, '*');
+  }}
+  // expose globally so onclick can reach it
+  window.toggle = toggle;
+}})();
+</script>
+"""
+    return html
+
+
+# ── Helper: build saved state dict per habit from full df ─────────────────────
+def _habit_month_states(df, field, year, month):
+    """Return {day_int: bool} for every day of (year, month) from df."""
+    import calendar as _cal
+    days_in_month = _cal.monthrange(year, month)[1]
+    result = {}
+    for d in range(1, days_in_month + 1):
+        day_date = date(year, month, d)
+        if day_date in df.index and field in df.columns:
+            result[d] = bool(df.loc[day_date, field])
+        else:
+            result[d] = False
+    return result
+
+
 with tab1:
+    # ── Today's instant-save checkboxes ──────────────────────────────────────
     col_left, col_right = st.columns([2, 1], gap="large")
 
     with col_left:
@@ -440,6 +495,66 @@ with tab1:
                 f"</div>",
                 unsafe_allow_html=True,
             )
+
+    # ── Month Strip — mobile-safe horizontal scroller ─────────────────────────
+    st.markdown("<br>", unsafe_allow_html=True)
+    with st.container(border=True):
+        st.markdown(
+            "<div style='font-family:Bebas Neue,sans-serif;font-size:1.4rem;"
+            "letter-spacing:0.06em;color:#ffffff;margin-bottom:0.5rem'>"
+            "📅 MONTH VIEW — Swipe to scroll on mobile</div>"
+            "<div style='color:#555;font-size:0.78rem;margin-bottom:0.75rem'>"
+            "Toggle any day below then hit <strong style='color:#c8ff00'>Save Month</strong> "
+            "to batch-update your database.</div>",
+            unsafe_allow_html=True,
+        )
+
+        _year, _month = today.year, today.month
+        _days_in_month = _calendar.monthrange(_year, _month)[1]
+
+        # Initialise session state holders for strip results
+        for _field, _icon, _label in habits:
+            _sk = f"strip_{_field}"
+            if _sk not in st.session_state:
+                st.session_state[_sk] = _habit_month_states(df, _field, _year, _month)
+
+        for _field, _icon, _label in habits:
+            st.markdown(
+                f"<div style='font-size:0.82rem;font-weight:600;color:#aaa;"
+                f"letter-spacing:0.08em;margin-top:0.6rem'>{_icon} {_label}</div>",
+                unsafe_allow_html=True,
+            )
+            _saved = _habit_month_states(df, _field, _year, _month)
+            _result = components.html(
+                _build_day_strip(_field, _days_in_month, _saved),
+                height=72,
+                scrolling=False,
+            )
+            # components.html returns the postMessage value when available
+            if isinstance(_result, dict):
+                st.session_state[f"strip_{_field}"] = {
+                    int(k): bool(v) for k, v in _result.items()
+                }
+
+        st.markdown("<br>", unsafe_allow_html=True)
+        if st.button("💾  Save Month", type="primary", key="save_month_btn"):
+            _saved_count = 0
+            for _field, _icon, _label in habits:
+                _strip_state = st.session_state.get(f"strip_{_field}", {})
+                for _day_int, _checked in _strip_state.items():
+                    _day_date = date(_year, _month, int(_day_int))
+                    # Only write days that differ from what's already in DB
+                    _current = False
+                    if _day_date in df.index and _field in df.columns:
+                        _current = bool(df.loc[_day_date, _field])
+                    if _checked != _current:
+                        upsert_day(_day_date, _field, _checked)
+                        _saved_count += 1
+            if _saved_count:
+                st.success(f"✅ Saved {_saved_count} change(s) to Supabase!")
+                st.rerun()
+            else:
+                st.info("No changes detected — nothing to save.")
 
 
 # ─────────────────────────────────────────────────────────────────────────────
